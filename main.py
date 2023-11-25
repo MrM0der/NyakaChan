@@ -10,6 +10,7 @@ from discord_webhook import DiscordWebhook
 from dotenv import load_dotenv
 import os
 from jishaku.cog import Jishaku
+import asyncio
 
 load_dotenv()
 
@@ -17,7 +18,19 @@ GIO_SECRET_TOKEN = os.getenv('GIO_SECRET_TOKEN')
 DISCORD_BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
 BOT_PREFIX = '`'
 
-userdb = {discordid: gioid}
+# Загрузка userdb из JSON файла при запуске
+try:
+    with open('userdb.json', 'r') as f:
+        userdb = {int(k): v for k, v in json.load(f).items()}
+except FileNotFoundError:
+    userdb = {}
+# Сохранение userdb в JSON файл при каждом его обновлении
+
+
+def save_userdb():
+    with open('userdb.json', 'w') as f:
+        json.dump(userdb, f)
+
 
 intents = discord.Intents.all()
 bot = commands.Bot(command_prefix=BOT_PREFIX, intents=intents)
@@ -133,18 +146,25 @@ def dockerlogs_discord(container_id):
         print(f"Error::: {e}")
 
 
+async def bot_status():
+    while True:
+        try:
+            await bot.change_presence(activity=discord.Streaming(name="Genshin Impact Offline", url="https://www.twitch.tv//"))
+        except Exception as e:
+            print(f"error:::: {e}")
+        await asyncio.sleep(10)
+
+
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user}')
     await bot.add_cog(Jishaku(bot=bot))
-    await bot.change_presence(activity=discord.Streaming(
-        name="Genshin Impact Offline", url="https://www.twitch.tv//"))
+    asyncio.create_task(bot_status())
     try:
         for i in containers:
             th = Thread(target=dockerlogs_discord, args=(i, ))
             th.start()
     except:
         pass
-
 
 bot.run(DISCORD_BOT_TOKEN)
