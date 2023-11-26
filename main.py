@@ -16,6 +16,7 @@ load_dotenv()
 
 GIO_SECRET_TOKEN = os.getenv('GIO_SECRET_TOKEN')
 DISCORD_BOT_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
+WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 BOT_PREFIX = '`'
 
 # Загрузка userdb из JSON файла при запуске
@@ -138,8 +139,8 @@ def dockerlogs_discord(container_id):
         containername = container.attrs['Name']
 
         for line in container.logs(stream=True, tail=0):
-            webhook = DiscordWebhook(url="https://canary.discord.com/api/webhooks/1171001448503443486/tqDZExl6yrfnJoV-xUZlp66_w3RmBY4wk4Fm0S2GF1RrkKBXv5KdjFoWwgNv6skGUeni",
-                                     content=f'```bash\n{str(containername + " >>> " + line.strip().decode())}\n```')
+            webhook = DiscordWebhook(
+                url=WEBHOOK_URL, content=f'```bash\n{str(containername + " >>> " + line.strip().decode())}\n```')
             response = webhook.execute()
             time.sleep(2)
     except Exception as e:
